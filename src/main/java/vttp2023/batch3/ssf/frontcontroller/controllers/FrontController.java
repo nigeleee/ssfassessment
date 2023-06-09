@@ -25,20 +25,21 @@ public class FrontController {
 
 	@Autowired
 	private AuthenticationService service;
-	private RedisTemplate<String, Integer> redisTemplate;
+	private final RedisTemplate<String, Integer> redisTemplate;
+
+	public FrontController(RedisTemplate<String, Integer> redisTemplate) {
+		this.redisTemplate = redisTemplate;
+	}
 	@GetMapping(produces = "application/x-www-form-urlencoded")
 	public String homePage(Model model) {
-
+		int captcha = service.createCaptcha();
+		redisTemplate.opsForValue().set("captcha", captcha);
+		
 		model.addAttribute("login", new Login());
+		model.addAttribute("captcha", captcha);
+		
 		return "view0";	
 
-		Captcha captcha = service.createCaptcha();
-        redisTemplate.opsForValue().set("captcha", captcha.getResult());
-
-        model.addAttribute("login", new Login());
-        model.addAttribute("captcha", captcha.getExpression());
-
-        return "login";
 	}
 
 	@PostMapping(path = "/authenticate", produces ="application/json") 
@@ -59,8 +60,6 @@ public class FrontController {
 		redisTemplate.delete("captcha");
 		return "redirect:/protectedPage";
 	}
-
-	
 	
 }
 
